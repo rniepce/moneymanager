@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @State private var editorType: TransactionType?
     @State private var showingSummary = false
+    @State private var showingChat = false
 
     var body: some View {
         NavigationStack {
@@ -31,6 +32,14 @@ struct HomeView: View {
             .navigationTitle("Meu Dinheiro")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingChat = true
+                    } label: {
+                        Image(systemName: "bubble.left.and.text.bubble.right")
+                    }
+                    .accessibilityLabel("Conversar com a IA")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingSummary = true
@@ -45,6 +54,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingSummary) {
                 SummaryView()
+            }
+            .sheet(isPresented: $showingChat) {
+                ChatView()
             }
         }
     }
