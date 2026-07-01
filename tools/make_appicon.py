@@ -84,20 +84,18 @@ def draw_piggy(draw):
 
 
 def draw_coin(draw):
-    """Moeda branca com 'R$' verde, caindo na fenda."""
+    """Moeda branca genérica (clean), caindo na fenda."""
     cx, cy, r = 560, 250, 92
+    # Disco externo
     draw.ellipse(
         [s(cx - r), s(cy - r), s(cx + r), s(cy + r)],
-        fill=WHITE, outline=GREEN_DETAIL, width=s(10),
+        fill=WHITE,
     )
-    font = ImageFont.truetype(FONT_PATH, s(96))
-    text = "R$"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    tw = bbox[2] - bbox[0]
-    th = bbox[3] - bbox[1]
-    draw.text(
-        (s(cx) - tw / 2 - bbox[0], s(cy) - th / 2 - bbox[1]),
-        text, font=font, fill=GREEN_DETAIL,
+    # Anel interno sutil para dar cara de moeda
+    ri = r - 26
+    draw.ellipse(
+        [s(cx - ri), s(cy - ri), s(cx + ri), s(cy + ri)],
+        outline=GREEN_DETAIL, width=s(9),
     )
 
 
