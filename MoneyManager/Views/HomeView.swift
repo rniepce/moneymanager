@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// Tela inicial minimalista: apenas os botões de Receita e Despesa.
 ///

@@ -6,7 +6,7 @@ garantindo bordas suaves. Sem transparência/cantos arredondados — o iOS aplic
 a máscara automaticamente.
 """
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 FINAL = 1024
 S = 4                      # fator de supersampling
@@ -16,9 +16,7 @@ WHITE = (255, 255, 255)
 # Verde de destaque do app (AccentColor ~ 0.16, 0.55, 0.42)
 GREEN_TOP = (63, 178, 138)
 GREEN_BOTTOM = (24, 116, 88)
-GREEN_DETAIL = (30, 120, 92)   # detalhes verdes sobre o branco (narinas, olho, R$)
-
-FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+GREEN_DETAIL = (30, 120, 92)   # detalhes verdes sobre o branco (narinas, olho, anel)
 
 
 def s(v: float) -> int:

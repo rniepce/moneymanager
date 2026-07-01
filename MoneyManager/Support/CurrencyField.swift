@@ -21,17 +21,18 @@ struct CurrencyField: View {
             Text(Formatters.currency(value))
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(value > 0 ? .primary : .secondary)
-                // TextField invisível por cima captura a digitação numérica.
-                .overlay(
-                    TextField("", text: $digits)
-                        .keyboardType(.numberPad)
-                        .focused($isFocused)
-                        .opacity(0.02)
-                        .onChange(of: digits) { _, newValue in
-                            updateValue(from: newValue)
-                        }
-                )
         }
+        // TextField invisível cobrindo a linha toda captura a digitação.
+        .overlay(
+            TextField("", text: $digits)
+                .keyboardType(.numberPad)
+                .focused($isFocused)
+                .opacity(0.02)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onChange(of: digits) { _, newValue in
+                    updateValue(from: newValue)
+                }
+        )
         .contentShape(Rectangle())
         .onTapGesture { isFocused = true }
         .onAppear { syncDigits(from: value) }

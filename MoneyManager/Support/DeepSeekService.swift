@@ -65,7 +65,9 @@ struct DeepSeekService {
         let key = AISettings.apiKey
         guard !key.isEmpty else { throw DeepSeekError.missingKey }
 
-        guard let url = URL(string: AISettings.baseURL + "/chat/completions") else {
+        var base = AISettings.baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        while base.hasSuffix("/") { base.removeLast() }
+        guard let url = URL(string: base + "/chat/completions") else {
             throw DeepSeekError.invalidURL
         }
 

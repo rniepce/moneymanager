@@ -24,7 +24,9 @@ struct TransactionEditorView: View {
         _title = State(initialValue: "")
         _amount = State(initialValue: 0)
         _date = State(initialValue: defaultDate)
-        _category = State(initialValue: type == .expense ? .supermercado : nil)
+        // Nenhuma categoria pré-selecionada: o usuário precisa escolher uma
+        // (o botão Salvar fica desabilitado até lá).
+        _category = State(initialValue: nil)
     }
 
     /// Edita um lançamento existente.
