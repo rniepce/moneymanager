@@ -2,28 +2,14 @@ import SwiftUI
 import SwiftData
 
 /// Chat com a IA (DeepSeek) para conversar sobre os dados salvos no app.
+/// Toda a lógica de conversa vive no `ChatViewModel`; esta view só exibe.
 struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query private var transactions: [Transaction]
 
-    @State private var messages: [ChatMessage] = [
-        ChatMessage(
-            role: .assistant,
-            content: "Oi! Sou seu assistente de finanças. Posso te ajudar a "
-                + "entender seus gastos e receitas. O que você quer saber?"
-        )
-    ]
-    @State private var draft: String = ""
-    @State private var isSending = false
-    @State private var errorMessage: String?
+    @State private var viewModel = ChatViewModel()
     @State private var showSettings = false
-
-    private let service = DeepSeekService()
-
-    private var canSend: Bool {
-        !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
-    }
 
     var body: some View {
         NavigationStack {
@@ -34,7 +20,7 @@ struct ChatView: View {
 
                 messagesList
 
-                if let errorMessage {
+                if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
                         .foregroundStyle(.red)
@@ -89,11 +75,11 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(messages.filter { $0.role != .system }) { message in
+                    ForEach(viewModel.messages.filter { $0.role != .system }) { message in
                         bubble(for: message)
                             .id(message.id)
                     }
-                    if isSending {
+                    if viewModel.isSending {
                         HStack {
                             ProgressView()
                             Text("Digitando…")
@@ -107,8 +93,8 @@ struct ChatView: View {
                 }
                 .padding()
             }
-            .onChange(of: messages.count) { _, _ in scrollToBottom(proxy) }
-            .onChange(of: isSending) { _, _ in scrollToBottom(proxy) }
+            .onChange(of: viewModel.messages.count) { _, _ in scrollToBottom(proxy) }
+            .onChange(of: viewModel.isSending) { _, _ in scrollToBottom(proxy) }
         }
     }
 
@@ -121,7 +107,7 @@ struct ChatView: View {
                 .foregroundStyle(isUser ? .white : .primary)
                 .background(
                     isUser ? Color.accentColor : Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 16)
+                    in: RoundedRectangle(cornerRadius: 18)
                 )
             if !isUser { Spacer(minLength: 40) }
         }
@@ -130,53 +116,28 @@ struct ChatView: View {
 
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField("Escreva sua pergunta…", text: $draft, axis: .vertical)
+            TextField("Escreva sua pergunta…", text: $viewModel.draft, axis: .vertical)
                 .lineLimit(1...4)
                 .padding(10)
                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20))
 
             Button {
-                Task { await sendMessage() }
+                Task { await viewModel.send(using: transactions) }
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 30))
             }
-            .disabled(!canSend)
+            .disabled(!viewModel.canSend)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
     }
 
-    // MARK: - Ações
-
-    private func sendMessage() async {
-        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-
-        errorMessage = nil
-        draft = ""
-        messages.append(ChatMessage(role: .user, content: text))
-        isSending = true
-        defer { isSending = false }
-
-        // Monta system prompt (contexto atual) + histórico da conversa.
-        let context = FinanceContext.build(from: transactions)
-        let system = ChatMessage(role: .system, content: FinanceContext.systemPrompt(context: context))
-        let payload = [system] + messages.filter { $0.role != .system }
-
-        do {
-            let reply = try await service.send(messages: payload)
-            messages.append(ChatMessage(role: .assistant, content: reply))
-        } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-        }
-    }
-
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         withAnimation {
-            if isSending {
+            if viewModel.isSending {
                 proxy.scrollTo("typing", anchor: .bottom)
-            } else if let last = messages.last {
+            } else if let last = viewModel.messages.last {
                 proxy.scrollTo(last.id, anchor: .bottom)
             }
         }

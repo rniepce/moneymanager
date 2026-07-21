@@ -14,17 +14,10 @@ enum FinanceContext {
             return lines.joined(separator: "\n")
         }
 
-        let totalIncome = transactions
-            .filter { $0.type == .income }
-            .reduce(Decimal(0)) { $0 + $1.amount }
-        let totalExpense = transactions
-            .filter { $0.type == .expense }
-            .reduce(Decimal(0)) { $0 + $1.amount }
-
         lines.append("Total de \(transactions.count) lançamento(s).")
-        lines.append("Receitas somam \(Formatters.currency(totalIncome)); "
-                     + "despesas somam \(Formatters.currency(totalExpense)); "
-                     + "saldo geral \(Formatters.currency(totalIncome - totalExpense)).")
+        lines.append("Receitas somam \(Formatters.currency(transactions.totalIncome)); "
+                     + "despesas somam \(Formatters.currency(transactions.totalExpense)); "
+                     + "saldo geral \(Formatters.currency(transactions.balance)).")
         lines.append("")
         lines.append("Lançamentos (mais recentes primeiro):")
 

@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Resumo do mês selecionado: saldo, total gasto e gasto por categoria.
+/// Resumo do mês selecionado: saldo, totais e gasto por categoria.
 /// Fica escondido atrás de um botão para não gerar ansiedade no dia a dia.
 struct SummaryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -12,64 +12,22 @@ struct SummaryView: View {
     /// Mês atualmente exibido (começa no mês corrente).
     @State private var selectedMonth: Date = .now
 
-    /// Lançamentos do mês selecionado.
     private var monthTransactions: [Transaction] {
-        allTransactions.filter { MonthFilter.isSameMonth($0.date, as: selectedMonth) }
-    }
-
-    private var totalIncome: Decimal {
-        monthTransactions.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
-    }
-
-    private var totalExpense: Decimal {
-        monthTransactions.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-    }
-
-    private var balance: Decimal { totalIncome - totalExpense }
-
-    /// Total gasto por categoria (só categorias com valor > 0), maior primeiro.
-    private var byCategory: [(category: ExpenseCategory, total: Decimal)] {
-        ExpenseCategory.allCases
-            .map { cat in
-                let total = monthTransactions
-                    .filter { $0.type == .expense && $0.category == cat }
-                    .reduce(Decimal(0)) { $0 + $1.amount }
-                return (cat, total)
-            }
-            .filter { $0.total > 0 }
-            .sorted { $0.total > $1.total }
+        allTransactions.inMonth(of: selectedMonth)
     }
 
     var body: some View {
         NavigationStack {
-            List {
-                monthNavigator
-
-                Section {
-                    balanceRow
-                    row(title: "Total de receitas", value: totalIncome, color: TransactionType.income.color)
-                    row(title: "Total de despesas", value: totalExpense, color: TransactionType.expense.color)
+            ScrollView {
+                VStack(spacing: 16) {
+                    MonthNavigator(month: $selectedMonth)
+                    balanceCard
+                    categoriesCard
+                    transactionsLink
                 }
-
-                Section("Gasto por categoria") {
-                    if byCategory.isEmpty {
-                        Text("Nenhuma despesa neste mês.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(byCategory, id: \.category) { item in
-                            categoryRow(item.category, total: item.total)
-                        }
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        MonthTransactionsView(month: selectedMonth)
-                    } label: {
-                        Label("Ver e editar lançamentos", systemImage: "list.bullet")
-                    }
-                }
+                .padding(20)
             }
+            .background { Theme.screenBackground }
             .navigationTitle("Resumo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -80,64 +38,111 @@ struct SummaryView: View {
         }
     }
 
-    // MARK: - Componentes
+    // MARK: - Cartões
 
-    private var monthNavigator: some View {
-        HStack {
-            Button {
-                selectedMonth = MonthFilter.month(byAdding: -1, to: selectedMonth)
-            } label: {
-                Image(systemName: "chevron.left")
-            }
-            Spacer()
-            Text(Formatters.monthYear(selectedMonth).capitalized)
-                .font(.headline)
-            Spacer()
-            Button {
-                selectedMonth = MonthFilter.month(byAdding: 1, to: selectedMonth)
-            } label: {
-                Image(systemName: "chevron.right")
-            }
-        }
-        .buttonStyle(.borderless)
-    }
+    /// Cartão principal: saldo grande + colunas de receitas e despesas.
+    private var balanceCard: some View {
+        let balance = monthTransactions.balance
+        return VStack(spacing: 12) {
+            Text("Saldo do mês")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
 
-    private var balanceRow: some View {
-        HStack {
-            Text("Saldo")
-                .font(.headline)
-            Spacer()
             Text(Formatters.currency(balance))
-                .font(.headline)
+                .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(balance >= 0 ? TransactionType.income.color : TransactionType.expense.color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+
+            Divider()
+
+            HStack(spacing: 12) {
+                statColumn(type: .income, value: monthTransactions.totalIncome)
+                Divider().frame(height: 36)
+                statColumn(type: .expense, value: monthTransactions.totalExpense)
+            }
         }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .cardStyle()
     }
 
-    private func row(title: String, value: Decimal, color: Color) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
+    private func statColumn(type: TransactionType, value: Decimal) -> some View {
+        VStack(spacing: 4) {
+            Label(type == .income ? "Receitas" : "Despesas", systemImage: type.systemImage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Text(Formatters.currency(value))
-                .foregroundStyle(color)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(type.color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private func categoryRow(_ category: ExpenseCategory, total: Decimal) -> some View {
+    /// Cartão com o gasto de cada categoria e barra proporcional.
+    private var categoriesCard: some View {
+        let items = monthTransactions.expensesByCategory
+        let totalExpense = monthTransactions.totalExpense
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Gasto por categoria")
+                .font(.headline)
+
+            if items.isEmpty {
+                Text("Nenhuma despesa neste mês.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(items, id: \.category) { item in
+                    categoryRow(item.category, total: item.total, of: totalExpense)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
+    }
+
+    private func categoryRow(_ category: ExpenseCategory, total: Decimal, of totalExpense: Decimal) -> some View {
         let fraction = totalExpense > 0
             ? NSDecimalNumber(decimal: total / totalExpense).doubleValue
             : 0
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Label(category.label, systemImage: category.systemImage)
-                    .foregroundStyle(category.color)
-                Spacer()
-                Text(Formatters.currency(total))
-                    .foregroundStyle(.secondary)
+        return HStack(spacing: 12) {
+            CategoryBadge(systemImage: category.systemImage, color: category.color)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(category.label)
+                        .font(.subheadline)
+                    Spacer()
+                    Text(Formatters.currency(total))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: min(fraction, 1))
+                    .tint(category.color)
             }
-            ProgressView(value: fraction)
-                .tint(category.color)
         }
-        .padding(.vertical, 2)
+    }
+
+    /// Cartão-link para ver e editar os lançamentos do mês.
+    private var transactionsLink: some View {
+        NavigationLink {
+            MonthTransactionsView(month: selectedMonth)
+        } label: {
+            HStack {
+                Label("Ver e editar lançamentos", systemImage: "list.bullet")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(20)
+            .cardStyle()
+        }
+        .buttonStyle(.plain)
     }
 }
 

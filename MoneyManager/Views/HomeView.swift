@@ -13,23 +13,26 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 Spacer()
 
-                Text("O que você quer anotar?")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
+                VStack(spacing: 6) {
+                    Text(greeting)
+                        .font(.system(.largeTitle, design: .rounded).bold())
+                    Text("O que você quer anotar hoje?")
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.bottom, 20)
 
-                choiceButton(for: .income)
-                choiceButton(for: .expense)
+                choiceCard(for: .income, subtitle: "Salário, vendas, presentes…")
+                choiceCard(for: .expense, subtitle: "Compras, contas, passeios…")
 
                 Spacer()
                 Spacer()
             }
             .padding(24)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.systemGroupedBackground))
+            .background { Theme.screenBackground }
             .navigationTitle("Meu Dinheiro")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -62,21 +65,44 @@ struct HomeView: View {
         }
     }
 
-    private func choiceButton(for type: TransactionType) -> some View {
+    /// Saudação de acordo com a hora do dia.
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: .now)
+        switch hour {
+        case 5..<12: return "Bom dia"
+        case 12..<18: return "Boa tarde"
+        default: return "Boa noite"
+        }
+    }
+
+    private func choiceCard(for type: TransactionType, subtitle: String) -> some View {
         Button {
             editorType = type
         } label: {
             HStack(spacing: 16) {
                 Image(systemName: type.systemImage)
-                    .font(.system(size: 34))
-                Text(type.label)
-                    .font(.title.weight(.bold))
+                    .font(.title2)
+                    .foregroundStyle(.white)
+                    .frame(width: 52, height: 52)
+                    .background(type.color, in: Circle())
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(type.label)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .padding(24)
-            .frame(maxWidth: .infinity)
-            .foregroundStyle(.white)
-            .background(type.color, in: RoundedRectangle(cornerRadius: 20))
+            .padding(18)
+            .cardStyle()
         }
         .buttonStyle(.plain)
     }

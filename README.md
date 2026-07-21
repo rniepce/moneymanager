@@ -69,10 +69,14 @@ O botão 💬 na tela inicial abre um chat que responde sobre seus lançamentos.
 MoneyManager/
   MoneyManagerApp.swift        Ponto de entrada + armazenamento local (SwiftData)
   Models/                      Transaction, TransactionType, ExpenseCategory, ChatMessage
+  ViewModels/                  ChatViewModel (estado e lógica da conversa com a IA)
   Views/                       Home, Editor (criar/editar), Resumo, Lista do mês,
                                Chat (IA) e Ajustes
-  Support/                     Formatação em R$, filtro de mês, campo de valor,
-                               chave no Keychain, contexto e cliente da DeepSeek
+    Components/                Peças reutilizáveis: linha de lançamento,
+                               navegador de mês e selo de categoria
+  Support/                     Tema visual, cálculos financeiros, formatação em R$,
+                               filtro de mês, campo de valor, chave no Keychain,
+                               contexto e cliente da DeepSeek
   Assets.xcassets/             Ícone e cor de destaque
 ```
 
