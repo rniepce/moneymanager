@@ -1,12 +1,14 @@
-# Oficina — plano do aplicativo
+# Escrita Criativa — plano do aplicativo
 
 Aplicativo local para **construir cursos de escrita criativa** a partir de uma
 base de conhecimento própria, com apoio de LLM (DeepSeek V4).
 
 > **Status**: documento de planejamento. Nada foi implementado ainda.
-> **Este plano vive temporariamente em `rniepce/moneymanager`** (branch
-> `claude/creative-writing-course-app-0yrbrh`). A pasta `oficina/` é
-> autocontida justamente para virar a raiz de um repositório próprio depois.
+> **Destino final**: [`rniepce/escritacriativa`](https://github.com/rniepce/escritacriativa).
+> O plano está parado em `rniepce/moneymanager` (branch
+> `claude/creative-writing-course-app-0yrbrh`, pasta `escritacriativa/`) porque
+> esta sessão ainda não recebeu acesso ao repositório novo. O conteúdo desta
+> pasta espelha a raiz do repositório de destino: transplantar é copiar e colar.
 
 ---
 
@@ -243,13 +245,15 @@ pode arrastar, remover e travar itens antes de aprovar.
 
 ## 6. Estrutura do repositório
 
+Raiz do repositório `escritacriativa`; o pacote Python chama-se `escrita`.
+
 ```
-oficina/
+escritacriativa/
   PLANO.md                    este documento
   README.md                   instruções de instalação e uso
   pyproject.toml              dependências (uv)
   .env.example                DEEPSEEK_API_KEY=...
-  oficina/
+  escrita/
     __init__.py
     config.py                 configuração e leitura da chave de API
     db.py                     conexão SQLite, migrações, FTS5
@@ -299,7 +303,7 @@ resto ainda não exista.
 ### Fase 0 — Esqueleto
 Projeto, dependências, banco vazio com as migrações, configuração da chave de
 API, app web subindo em `localhost` com uma página vazia.
-*Entrega: `uv run oficina` abre o navegador.*
+*Entrega: `uv run escrita` abre o navegador.*
 
 ### Fase 1 — Ingestão
 Upload de arquivo pela interface, extração de PDF/EPUB/DOCX/MD/TXT, segmentação
@@ -365,10 +369,11 @@ o plano já assume embeddings locais.
 
 ## 9. Próximo passo
 
-Este documento fecha o **planejamento**. Quando quiser começar a construir:
+Este documento fecha o **planejamento**. O repositório de destino já existe —
+falta liberar o acesso desta sessão a ele (veja o *Status* no topo). Feito isso:
 
-1. Crio o repositório novo (sugestões de nome: `oficina`, `ateliê`,
-   `fabulario`) e movo esta pasta para lá.
+1. Movo o conteúdo desta pasta para a raiz de `rniepce/escritacriativa` e
+   removo a pasta daqui, deixando o `moneymanager` de volta como estava.
 2. Implemento a Fase 0 e a Fase 1, para você já conseguir ingerir seu primeiro
    livro.
 
