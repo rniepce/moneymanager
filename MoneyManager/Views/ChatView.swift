@@ -82,7 +82,7 @@ struct ChatView: View {
                     if viewModel.isSending {
                         HStack {
                             ProgressView()
-                            Text("Digitando…")
+                            Text(AISettings.isThinkingEnabled ? "Pensando…" : "Digitando…")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                             Spacer()
@@ -102,16 +102,35 @@ struct ChatView: View {
         let isUser = message.role == .user
         return HStack {
             if isUser { Spacer(minLength: 40) }
-            Text(message.content)
-                .padding(12)
-                .foregroundStyle(isUser ? .white : .primary)
-                .background(
-                    isUser ? Color.accentColor : Color(.secondarySystemBackground),
-                    in: RoundedRectangle(cornerRadius: 18)
-                )
+            VStack(alignment: .leading, spacing: 8) {
+                Text(message.content)
+                if let reasoning = message.reasoning {
+                    reasoningDisclosure(reasoning)
+                }
+            }
+            .padding(12)
+            .foregroundStyle(isUser ? .white : .primary)
+            .background(
+                isUser ? Color.accentColor : Color(.secondarySystemBackground),
+                in: RoundedRectangle(cornerRadius: 18)
+            )
             if !isUser { Spacer(minLength: 40) }
         }
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+    }
+
+    /// Mostra, recolhido, o raciocínio que a IA fez antes de responder.
+    private func reasoningDisclosure(_ reasoning: String) -> some View {
+        DisclosureGroup {
+            Text(reasoning)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+        } label: {
+            Label("Como pensei", systemImage: "brain")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var inputBar: some View {

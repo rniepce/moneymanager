@@ -29,16 +29,32 @@ enum DeepSeekError: LocalizedError {
 
 /// Cliente da API de chat da DeepSeek (compatível com OpenAI).
 struct DeepSeekService {
+    /// Resposta da IA: o texto para o usuário e, no modo raciocínio do V4
+    /// Flash, o passo a passo que o modelo pensou antes de responder.
+    struct Reply {
+        let content: String
+        let reasoning: String?
+    }
+
     // MARK: - Modelos de requisição/resposta
 
     private struct RequestBody: Encodable {
         let model: String
         let messages: [Message]
         let stream: Bool
+        /// Só é enviado nos modelos V4, que aceitam ligar/desligar o raciocínio.
+        let thinking: Thinking?
 
         struct Message: Encodable {
             let role: String
             let content: String
+        }
+
+        struct Thinking: Encodable {
+            let type: String
+
+            static let enabled = Thinking(type: "enabled")
+            static let disabled = Thinking(type: "disabled")
         }
     }
 
@@ -50,6 +66,13 @@ struct DeepSeekService {
         }
         struct Message: Decodable {
             let content: String
+            /// Presente apenas quando o modo raciocínio está ligado.
+            let reasoningContent: String?
+
+            enum CodingKeys: String, CodingKey {
+                case content
+                case reasoningContent = "reasoning_content"
+            }
         }
     }
 
@@ -60,8 +83,8 @@ struct DeepSeekService {
 
     // MARK: - Envio
 
-    /// Envia as mensagens e devolve o texto da resposta da IA.
-    func send(messages: [ChatMessage]) async throws -> String {
+    /// Envia as mensagens e devolve a resposta da IA.
+    func send(messages: [ChatMessage]) async throws -> Reply {
         let key = AISettings.apiKey
         guard !key.isEmpty else { throw DeepSeekError.missingKey }
 
@@ -71,10 +94,20 @@ struct DeepSeekService {
             throw DeepSeekError.invalidURL
         }
 
+        let model = AISettings.model
+        let thinkingEnabled = AISettings.isThinkingEnabled
+        // Modelos legados (deepseek-chat/reasoner) já trazem o modo fixo no id
+        // e não aceitam o campo `thinking`, então ele fica de fora.
+        var thinking: RequestBody.Thinking?
+        if supportsThinkingToggle(model: model) {
+            thinking = thinkingEnabled ? RequestBody.Thinking.enabled : RequestBody.Thinking.disabled
+        }
+
         let body = RequestBody(
-            model: AISettings.model,
+            model: model,
             messages: messages.map { .init(role: $0.role.rawValue, content: $0.content) },
-            stream: false
+            stream: false,
+            thinking: thinking
         )
 
         var request = URLRequest(url: url)
@@ -82,7 +115,8 @@ struct DeepSeekService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         request.httpBody = try JSONEncoder().encode(body)
-        request.timeoutInterval = 60
+        // Pensar leva mais tempo: damos mais folga quando o raciocínio está ligado.
+        request.timeoutInterval = thinkingEnabled ? 180 : 60
 
         let data: Data
         let response: URLResponse
@@ -103,12 +137,25 @@ struct DeepSeekService {
         }
 
         let decoded = try JSONDecoder().decode(ResponseBody.self, from: data)
-        let content = decoded.choices.first?.message.content
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard let content, !content.isEmpty else {
+        guard let message = decoded.choices.first?.message else {
             throw DeepSeekError.emptyResponse
         }
-        return content
+
+        let content = message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !content.isEmpty else { throw DeepSeekError.emptyResponse }
+
+        let reasoning = message.reasoningContent?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return Reply(
+            content: content,
+            reasoning: (reasoning?.isEmpty == false) ? reasoning : nil
+        )
+    }
+
+    /// O campo `thinking` só existe nos modelos V4 da DeepSeek.
+    private func supportsThinkingToggle(model: String) -> Bool {
+        if let known = AIModel(rawValue: model) { return known.supportsThinkingToggle }
+        return model.hasPrefix("deepseek-v4")
     }
 }

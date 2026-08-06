@@ -11,10 +11,13 @@ struct ChatMessage: Identifiable, Equatable {
     let id: UUID
     let role: Role
     var content: String
+    /// Raciocínio da IA, quando o modo raciocínio do V4 Flash está ligado.
+    var reasoning: String?
 
-    init(id: UUID = UUID(), role: Role, content: String) {
+    init(id: UUID = UUID(), role: Role, content: String, reasoning: String? = nil) {
         self.id = id
         self.role = role
         self.content = content
+        self.reasoning = reasoning
     }
 }

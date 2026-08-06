@@ -44,7 +44,9 @@ final class ChatViewModel {
 
         do {
             let reply = try await service.send(messages: [system] + messages)
-            messages.append(ChatMessage(role: .assistant, content: reply))
+            messages.append(
+                ChatMessage(role: .assistant, content: reply.content, reasoning: reply.reasoning)
+            )
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
