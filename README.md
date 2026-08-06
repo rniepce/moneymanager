@@ -17,19 +17,31 @@ de resumo.
   **edite ou exclua** qualquer item (título, valor, categoria e data).
 - **Chat com IA** (💬 no canto da tela inicial): converse em português sobre
   seus dados ("quanto gastei com transporte esse mês?", "onde posso
-  economizar?"). Usa a **DeepSeek**.
+  economizar?"). Usa o **DeepSeek V4 Flash**.
 - **Dados salvos só no seu aparelho** (SwiftData), offline, sem cadastro — exceto
   ao usar o chat com IA (veja abaixo).
 
-## Chat com IA (DeepSeek)
+## Chat com IA (DeepSeek V4 Flash)
 
 O botão 💬 na tela inicial abre um chat que responde sobre seus lançamentos.
 
 1. Crie uma chave de API em **platform.deepseek.com** (menu *API Keys*).
 2. No app, abra o chat e toque na **engrenagem** (Ajustes).
 3. Cole a chave e salve. Ela fica guardada com segurança no aparelho (Keychain),
-   nunca no código. O modelo padrão é `deepseek-chat` — você pode trocar o id nos
-   Ajustes se sua conta usar outro (ex.: um modelo mais novo).
+   nunca no código.
+
+### Modelo e modo raciocínio
+
+- O modelo padrão é o **`deepseek-v4-flash`**: rápido e com contexto grande, o
+  que deixa a conversa fluida mesmo com muitos lançamentos.
+- Nos Ajustes há uma lista com os modelos conhecidos (`deepseek-v4-flash` e os
+  apelidos legados `deepseek-chat` e `deepseek-reasoner`) e a opção **Outro**,
+  para digitar qualquer outro id que sua conta use.
+- O **modo raciocínio** (só no V4) faz a IA pensar antes de responder: melhor em
+  perguntas com contas, porém mais lento. Vem **desligado**. Quando ligado, cada
+  resposta traz um "Como pensei" que você pode abrir para ver o raciocínio.
+- Quem já usava o app com o modelo antigo (`deepseek-chat`) é migrado
+  automaticamente para o V4 Flash na primeira abertura desta versão.
 
 > ⚠️ **Privacidade**: ao usar o chat, seus lançamentos (títulos, valores,
 > categorias e datas) são enviados aos servidores da DeepSeek para a IA poder

@@ -12,6 +12,11 @@ struct MoneyManagerApp: App {
         }
     }()
 
+    init() {
+        // Leva quem estava no modelo antigo da IA para o V4 Flash.
+        AISettings.migrateIfNeeded()
+    }
+
     var body: some Scene {
         WindowGroup {
             HomeView()
